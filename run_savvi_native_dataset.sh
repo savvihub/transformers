@@ -8,4 +8,3 @@ python examples/language-modeling/run_clm.py \
     --output_dir '/output' \
     --do_train \
     --do_eval \
-    --output_dir /tmp/test-clm
