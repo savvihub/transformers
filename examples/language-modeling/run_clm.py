@@ -337,6 +337,8 @@ def main():
                     logger.info(f"  {key} = {value}")
                     writer.write(f"{key} = {value}\n")
 
+    savvihub.log(step=0, row={'perplexity': results["perplexity"]})
+
     return results
 
 
