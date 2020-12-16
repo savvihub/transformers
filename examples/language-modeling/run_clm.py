@@ -144,15 +144,11 @@ class DataTrainingArguments:
 
 
 class SavviCallback(TrainerCallback):
-    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        print(f"On epoch end: state: {state}, control: {control}")
-
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         _ = logs.pop("total_flos", None)
         if state.is_local_process_zero:
-            savvihub.log(step=int(logs["epochs"]), row={'loss': logs["loss"]})
-            print(f"!!! This Log:{logs}")
+            savvihub.log(step=int(logs["epoch"]), row={'loss': logs["loss"]})
 
 def main():
     parser = HfArgumentParser((ModelArguments, DatasetArguments, TrainingArguments))
