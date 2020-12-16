@@ -147,8 +147,8 @@ class SavviCallback(TrainerCallback):
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         _ = logs.pop("total_flos", None)
-        if state.is_local_process_zero:
-            savvihub.log(step=int(logs["epoch"]), row={'loss': logs["loss"]})
+        if state.is_local_process_zero and logs.get("loss"):
+            savvihub.log(step=logs["epoch"], row={'loss': logs["loss"]})
 
 def main():
     parser = HfArgumentParser((ModelArguments, DatasetArguments, TrainingArguments))
