@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from datasets import load_from_disk, load_dataset
+from transformers.integrations import WandbCallback, rewrite_logs
 
 import transformers
 from transformers import (
@@ -42,15 +43,17 @@ from transformers import (
     TrainingArguments,
     default_data_collator,
     set_seed,
-    TrainerCallback, TrainerState, TrainerControl)
+    TrainerCallback,
+    is_wandb_available,
+)
 from transformers.trainer_utils import is_main_process
-
 
 logger = logging.getLogger(__name__)
 
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
+WANDB_API_KEY = os.getenv("WANDB_API_KEY")
 
 
 @dataclass
@@ -146,11 +149,19 @@ class DataTrainingArguments:
 class SavviCallback(TrainerCallback):
 
     def on_log(self, args, state, control, logs=None, **kwargs):
-        _ = logs.pop("total_flos", None)
-        if state.is_local_process_zero and logs.get("loss"):
-            savvihub.log(step=logs["epoch"], row={'loss': logs["loss"]})
+        # _ = logs.pop("total_flos", None)
+        # if state.is_local_process_zero and logs.get("loss"):
+        #     savvihub.log(step=logs["epoch"], row={'loss': logs["loss"]})
+
+        if state.is_world_process_zero:
+            logs = rewrite_logs(logs)
+            savvihub.log(step=state.global_step, row=logs)
+
 
 def main():
+    if is_wandb_available():
+        import wandb
+
     parser = HfArgumentParser((ModelArguments, DatasetArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
@@ -307,7 +318,9 @@ def main():
 
     # Add Callbacks
     savvi_callback = SavviCallback()
+    wandb_callback = WandbCallback()
     trainer.add_callback(savvi_callback)
+    trainer.add_callback(wandb_callback)
 
     # Training
     if training_args.do_train:
