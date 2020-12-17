@@ -318,9 +318,7 @@ def main():
 
     # Add Callbacks
     savvi_callback = SavviCallback()
-    wandb_callback = WandbCallback()
     trainer.add_callback(savvi_callback)
-    trainer.add_callback(wandb_callback)
 
     # Training
     if training_args.do_train:
